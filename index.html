@@ -43,14 +43,25 @@
   // Variables utilisées pour définir si un bouton est pressé ou pas (false parce que de base le bouton n'est pas préssé )
   var rightPressed = false;
   var leftPressed = false;
-  // Variables servant à définir les briques à cassés
-  var brickRowCount = 3;
-  var brickColumnCount = 5;
-  var brickWidth = 75;
+  // Variables servant à définir les briques à cassées
+  var brickRowCount = 3; //Nombre de lignes de briques
+  var brickColumnCount = 5; //Nombre de colonne
+  var brickWidth = 75; //Largeur
   var brickHeight = 20;
-  var brickPadding = 10;
+  var brickPadding = 10; //Du paggin, pour qu'ils ne se touchent pas
   var brickOffsetTop = 30;
   var brickOffsetLeft = 30;
+
+  var bricks = [];
+  // Initialisation du tableau 2 dim
+  for(var c=0; c<brickColumnCount; c++)
+  {
+      bricks[c] = [];
+      for(var r=0; r<brickRowCount; r++)
+      {
+          bricks[c][r] = { x: 0, y: 0 };
+      }
+  }
 
   // EventListener pour connaitre si on appuie sur la touche directionnelle gauche ou droite
   document.addEventListener("keydown", keyDownHandler, false);
@@ -104,12 +115,39 @@
     ctx.fill();
     ctx.closePath();
   }
+
+  function drawBricks()
+  {
+    // Création d'une double boucle pour un tableau à deux dimensions
+    // Il contiendra les colonnes de briques (c), qui à son tour contiendra les lignes de briques (r)
+    for(var c=0; c<brickColumnCount; c++)
+    {
+        for(var r=0; r<brickRowCount; r++)
+        {
+          // Modification de la position de la brique à chaque boucle
+          // pos X: on prends (largeur+padding)* nbr_colonne + écart à gauche
+          var brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
+          // Idem pour la pos Y
+          var brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
+          bricks[c][r].x = brickX;
+          bricks[c][r].y = brickY;
+          // Création de la brique
+          ctx.beginPath();
+          ctx.rect(brickX, brickY, brickWidth, brickHeight);
+          ctx.fillStyle = "#0095DD";
+          ctx.fill();
+          ctx.closePath();
+        }
+    }
+  }
+
   // Fonction définissant les dessins
   function draw()
   {
     // clearRect méthode de l'API 2D des Canvas met en noir transparent tous les pixels dans le rectangle défini
     // synthaxe: ctx.clearRect(x, y, largeur, hauteur);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBricks();
     // Appel de la fonction dessinant la sphère
     drawBall();
     drawPaddle();
