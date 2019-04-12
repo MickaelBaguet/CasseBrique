@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Gamedev Canvas Workshop</title>
+    <style>
+    	*
+      {
+        padding: 0;
+        margin: 0;
+      }
+    	canvas
+      {
+        background: #eee;
+        display: block;
+        margin: 0 auto;
+      }
+    </style>
+</head>
+<body>
+<!-- Canvas contiendra le rendu du jeu avec une taille de 480x320  -->
+<canvas id="myCanvas" width="480" height="320"></canvas>
+
+<script>
+  // On récupère la référence de l'élément canvas
+  var canvas = document.getElementById("myCanvas");
+  // Variable ctx pour stocker le contexte de rendu 2D
+  // getContext est une méthode de l'élément canvas qui retourne un contexte de dessin sur le canevas
+  var ctx = canvas.getContext("2d");
+  // Variables définissant la position initiale de la sphère
+  var x = canvas.width/2;
+  var y = canvas.height-30;
+  // Variables définissant le déplacement de la sphère à chaque rafraichissement
+  var dx = 2;
+  var dy = -2;
+  // Variable contenant le rayon de la sphère
+  var ballRadius = 10;
+  // Variables pour le paddle, taille, longueur et pos initiale sur x
+  var paddleHeight = 10;
+  var paddleWidth = 75;
+  var paddleX = (canvas.width-paddleWidth)/2;
+  // Variables utilisées pour définir si un bouton est pressé ou pas (false parce que de base le bouton n'est pas préssé )
+  var rightPressed = false;
+  var leftPressed = false;
+  // Variables servant à définir les briques à cassés
+  var brickRowCount = 3;
+  var brickColumnCount = 5;
+  var brickWidth = 75;
+  var brickHeight = 20;
+  var brickPadding = 10;
+  var brickOffsetTop = 30;
+  var brickOffsetLeft = 30;
+
+  // EventListener pour connaitre si on appuie sur la touche directionnelle gauche ou droite
+  document.addEventListener("keydown", keyDownHandler, false);
+  document.addEventListener("keyup", keyUpHandler, false);
+
+  // Fonction quand on appuie sur la touche directionnelle gauche ou droite
+  function keyDownHandler(e)
+  {
+    // keyCode 39 pour la flèche droite
+    if(e.keyCode == 39)
+    {
+      // On dit que la fleche droite est pressée
+      rightPressed = true;
+    }
+    // keyCode 37 pour la flèche gauche
+    else if(e.keyCode == 37)
+    {
+      // On dit que la flèche gauche est pressée
+      leftPressed = true;
+    }
+  }
+  // Fonction quand on lache la touche directionnelle gauche ou droite
+  function keyUpHandler(e)
+  {
+      if(e.keyCode == 39)
+      {
+          rightPressed = false;
+      }
+      else if(e.keyCode == 37)
+      {
+          leftPressed = false;
+      }
+  }
+
+  // Fonction créant une sphère de couleur bleu
+  function drawBall()
+  {
+    ctx.beginPath();
+    ctx.arc(x, y, ballRadius, 0, Math.PI*2);
+    ctx.fillStyle = "#0095DD";
+    ctx.fill();
+    ctx.closePath();
+  }
+
+  // Fonction créant un rectangle bleu (le paddle)
+  function drawPaddle()
+  {
+    ctx.beginPath();
+    ctx.rect(paddleX, canvas.height-paddleHeight, paddleWidth, paddleHeight);
+    ctx.fillStyle = "#0095DD";
+    ctx.fill();
+    ctx.closePath();
+  }
+  // Fonction définissant les dessins
+  function draw()
+  {
+    // clearRect méthode de l'API 2D des Canvas met en noir transparent tous les pixels dans le rectangle défini
+    // synthaxe: ctx.clearRect(x, y, largeur, hauteur);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Appel de la fonction dessinant la sphère
+    drawBall();
+    drawPaddle();
+    // Si la largeur + modif largeur est supérieur à la largeur du canvas (si elle sort à droite)
+    // Ou si la largeur + modif largeur est inférieur à 0 (si elle sort à gauche)
+    // On inverse son déplacement
+    if(x + dx > canvas.width - ballRadius || x + dx < ballRadius)
+    {
+      dx = -dx;
+    }
+
+    // Sur l'axe y (vertival) si la pos de la sphère+son déplacement est supérieur
+    if(y + dy < ballRadius)
+    {
+        dy = -dy;
+    }
+    // Si la balle entre en collision avec le bas du canvas
+    else if(y + dy > canvas.height-ballRadius)
+    {
+      // Si la pos x de la sphère se trouve entre la pos x et la pos x + largeur du paddle (si la balle est sur la sphère)
+      if(x > paddleX && x < paddleX + paddleWidth)
+      {
+      // On renvoie la balle
+        dy = -dy;
+      }
+      else
+      {
+        alert("GAME OVER");
+        document.location.reload();
+      }
+    }
+    // Si on appuis sur la flèche droite et qu'il est dans la largeur du canvas
+    if(rightPressed && paddleX < canvas.width-paddleWidth)
+    {
+      // On le décalle à droite
+      paddleX += 7;
+    }
+    else if(leftPressed && paddleX > 0)
+    {
+      paddleX -= 7;
+    }
+
+    // Permets le déplacement de la sphère, en modifiant sa pos
+    x += dx;
+    y += dy;
+  }
+  // setInterval() est une fonction qui appelle une autre fonction toute les x millisecondes
+  setInterval(draw, 10);
+
+
+  // Code JS de la partie 1 :
+      // beginPath et closePath sont des méthodes du context 2d qui englobent des instructions
+      // ctx.beginPath();
+      // rect (méthode du context2D) crée un rectangle à la position (x, y) et de dimensions width et height
+      // syntaxe: ctx.rect(x, y, width, height);
+      // ctx.rect(20, 40, 50, 50);
+      // fillStyle de l'API Canvas 2D spécifie la couleur ou style à utiliser à l'intérieur
+      // Ici la propriété fillStyle stocke une couleur qui sera utilisée par la méthode fill() pour peindre le carré en rouge
+      // ctx.fillStyle = "#FF0000";
+      // ctx.fill();
+      // Fin des instructions pour la création de la forme
+      // ctx.closePath();
+      // ctx.beginPath();
+      // arc() de l'API Canvas 2D permet d'ajouter un arc de cercle  au tracé,
+      // syntaxe: ctx.arc(x, y, rayon, angleDépart, angleFin, sensAntiHoraire);
+      // ctx.arc(240, 160, 20, 0, Math.PI*2, false);
+      // ctx.fillStyle = "green";
+      // ctx.fill();
+      // ctx.closePath();
+      // ctx.beginPath();
+      // ctx.rect(160, 10, 100, 40);
+      // strokeStyle permet de ne colorer que les contours de la forme
+      // rgba = rgba(red, green, blue, alpha) alpha définie l'opacité (0 = totalement transparent, 1.0 = totalement opaque)
+      // ctx.strokeStyle = "rgba(0, 0, 255, 0.5)";
+      // ctx.stroke();
+      // ctx.closePath();
+</script>
+
+</body>
+</html>
