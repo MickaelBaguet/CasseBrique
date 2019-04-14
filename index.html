@@ -11,7 +11,6 @@
       }
     	canvas
       {
-        /* Test 3*/
         background: #eee;
         display: block;
         margin: 0 auto;
@@ -51,22 +50,32 @@
   var brickPadding = 10; //Du paggin, pour qu'ils ne se touchent pas
   var brickOffsetTop = 30;
   var brickOffsetLeft = 30;
-
   var bricks = [];
+  var score = 0;
+  var lives = 3;
   // Initialisation du tableau 2 dim
   for(var c=0; c<brickColumnCount; c++)
   {
       bricks[c] = [];
       for(var r=0; r<brickRowCount; r++)
       {
-          bricks[c][r] = { x: 0, y: 0 };
+        // On ajoute à la brique un status (point de vie)
+        bricks[c][r] = { x: 0, y: 0, status: 1 };
       }
   }
-
   // EventListener pour connaitre si on appuie sur la touche directionnelle gauche ou droite
   document.addEventListener("keydown", keyDownHandler, false);
   document.addEventListener("keyup", keyUpHandler, false);
+  document.addEventListener("mousemove", mouseMoveHandler, false);
 
+  function mouseMoveHandler(e)
+  {
+    var relativeX = e.clientX - canvas.offsetLeft;
+    if(relativeX > 0 && relativeX < canvas.width)
+    {
+        paddleX = relativeX - paddleWidth/2;
+    }
+  }
   // Fonction quand on appuie sur la touche directionnelle gauche ou droite
   function keyDownHandler(e)
   {
@@ -95,7 +104,57 @@
           leftPressed = false;
       }
   }
-
+  // Fonction permettant de détecter les collisions
+  function collisionDetection()
+  {
+    // On testera pour toute les briques à chaque fois
+    for(var c=0; c<brickColumnCount; c++)
+    {
+      for(var r=0; r<brickRowCount; r++)
+      {
+        // On stocke la brique qu'on test dans une variable
+        var b = bricks[c][r];
+        // Pour le test de collision ces 4 tests doivent être vraies :
+          // La position x de la balle est supérieure à la position x de la brique.
+          // La position x de la balle est inférieure à la position x de la brique plus sa largeur.
+          // La position y de la balle est supérieure à la position y de la brique.
+          // La position y de la balle est inférieure à la position y de la brique plus sa hauteur
+        if (b.status == 1)
+        {
+          if(x > b.x && x < b.x+brickWidth && y > b.y && y < b.y+brickHeight)
+          {
+            // Si le test est vrai on change la direction de la sphère
+            dy = -dy;
+            b.status = 0;
+            score++;
+            // Condition pour savoir si on a gagné ou non (si le score = au nombre de brique)
+            if(score == brickRowCount*brickColumnCount)
+            {
+              alert("TU AS GAGNÉ, FÉLICITATIONS !");
+              document.location.reload();
+              clearInterval(interval); // Needed for Chrome to end game
+            }
+          }
+        }
+      }
+    }
+  }
+  // Fonction pour l'affichage des score
+  function drawScore()
+  {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#0095DD";
+    // fillText: méthode de l'API Cancas 2D écrivant du texte à la pos (x, y)
+    // Synthaxe: ctx.fillText(texte, x, y [, largeurMax]);
+    ctx.fillText("Score: "+score, 8, 20);
+  }
+  // Fonction affichant les vies
+  function drawLives()
+  {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#0095DD";
+    ctx.fillText("Lives: "+lives, canvas.width-65, 20);
+  }
   // Fonction créant une sphère de couleur bleu
   function drawBall()
   {
@@ -105,7 +164,6 @@
     ctx.fill();
     ctx.closePath();
   }
-
   // Fonction créant un rectangle bleu (le paddle)
   function drawPaddle()
   {
@@ -115,14 +173,16 @@
     ctx.fill();
     ctx.closePath();
   }
-
   function drawBricks()
   {
-    // Création d'une double boucle pour un tableau à deux dimensions
+    // Création d'une double boucle pour la création d'un tableau à deux dimensions
     // Il contiendra les colonnes de briques (c), qui à son tour contiendra les lignes de briques (r)
     for(var c=0; c<brickColumnCount; c++)
     {
-        for(var r=0; r<brickRowCount; r++)
+      for(var r=0; r<brickRowCount; r++)
+      {
+        // Rajout d'un if pour savoir si la brique est toujours la
+        if(bricks[c][r].status == 1)
         {
           // Modification de la position de la brique à chaque boucle
           // pos X: on prends (largeur+padding)* nbr_colonne + écart à gauche
@@ -138,9 +198,9 @@
           ctx.fill();
           ctx.closePath();
         }
+      }
     }
   }
-
   // Fonction définissant les dessins
   function draw()
   {
@@ -151,6 +211,9 @@
     // Appel de la fonction dessinant la sphère
     drawBall();
     drawPaddle();
+    drawScore();
+    drawLives();
+    collisionDetection();
     // Si la largeur + modif largeur est supérieur à la largeur du canvas (si elle sort à droite)
     // Ou si la largeur + modif largeur est inférieur à 0 (si elle sort à gauche)
     // On inverse son déplacement
@@ -158,7 +221,6 @@
     {
       dx = -dx;
     }
-
     // Sur l'axe y (vertival) si la pos de la sphère+son déplacement est supérieur
     if(y + dy < ballRadius)
     {
@@ -175,8 +237,24 @@
       }
       else
       {
-        alert("GAME OVER");
-        document.location.reload();
+        // Si on loupe la balle, on perds une vie
+        lives--;
+        // Si on n'a plus de vie
+        if(!lives)
+        {
+          alert("GAME OVER");
+          document.location.reload();
+          clearInterval(interval); // Needed for Chrome to end game
+        }
+        // Sinon on réinitialise la pos du paddle et de la sphère
+        else
+        {
+          x = canvas.width/2;
+          y = canvas.height-30;
+          dx = 2;
+          dy = -2;
+          paddleX = (canvas.width-paddleWidth)/2;
+        }
       }
     }
     // Si on appuis sur la flèche droite et qu'il est dans la largeur du canvas
@@ -189,41 +267,12 @@
     {
       paddleX -= 7;
     }
-
     // Permets le déplacement de la sphère, en modifiant sa pos
     x += dx;
     y += dy;
+    requestAnimationFrame(draw);
   }
-  // setInterval() est une fonction qui appelle une autre fonction toute les x millisecondes
-  setInterval(draw, 10);
-
-
-  // Code JS de la partie 1 :
-      // beginPath et closePath sont des méthodes du context 2d qui englobent des instructions
-      // ctx.beginPath();
-      // rect (méthode du context2D) crée un rectangle à la position (x, y) et de dimensions width et height
-      // syntaxe: ctx.rect(x, y, width, height);
-      // ctx.rect(20, 40, 50, 50);
-      // fillStyle de l'API Canvas 2D spécifie la couleur ou style à utiliser à l'intérieur
-      // Ici la propriété fillStyle stocke une couleur qui sera utilisée par la méthode fill() pour peindre le carré en rouge
-      // ctx.fillStyle = "#FF0000";
-      // ctx.fill();
-      // Fin des instructions pour la création de la forme
-      // ctx.closePath();
-      // ctx.beginPath();
-      // arc() de l'API Canvas 2D permet d'ajouter un arc de cercle  au tracé,
-      // syntaxe: ctx.arc(x, y, rayon, angleDépart, angleFin, sensAntiHoraire);
-      // ctx.arc(240, 160, 20, 0, Math.PI*2, false);
-      // ctx.fillStyle = "green";
-      // ctx.fill();
-      // ctx.closePath();
-      // ctx.beginPath();
-      // ctx.rect(160, 10, 100, 40);
-      // strokeStyle permet de ne colorer que les contours de la forme
-      // rgba = rgba(red, green, blue, alpha) alpha définie l'opacité (0 = totalement transparent, 1.0 = totalement opaque)
-      // ctx.strokeStyle = "rgba(0, 0, 255, 0.5)";
-      // ctx.stroke();
-      // ctx.closePath();
+  draw();
 </script>
 
 </body>
